@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>angular-hu-retry by angular-hu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">angular-hu-retry</h1>
+      <h2 class="project-tagline">Support multiple $http requests retries - httpu.retry</h2>
+      <a href="https://github.com/angular-hu/bower-retry" class="btn">View on GitHub</a>
+      <a href="https://github.com/angular-hu/bower-retry/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/angular-hu/bower-retry/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h2>
+<a id="httpuretry" class="anchor" href="#httpuretry" aria-hidden="true"><span class="octicon octicon-link"></span></a>httpu.retry</h2>
+
+<p>Factory to create interceptors that retry the failed request based on some conditions</p>
+
+<h3>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h3>
+
+<p>Get it from <a href="http://bower.io/">bower</a> or directly download it.</p>
+
+<div class="highlight highlight-sh"><pre>bower install --save angular-hu-retry</pre></div>
+
+<p>Add the dependency in the HTML</p>
+
+<div class="highlight highlight-html"><pre>&lt;<span class="pl-ent">script</span> <span class="pl-e">type</span>=<span class="pl-s"><span class="pl-pds">"</span>text/javascript<span class="pl-pds">"</span></span> <span class="pl-e">src</span>=<span class="pl-s"><span class="pl-pds">"</span>bower_components/angular-hu-retry/retry.js<span class="pl-pds">"</span></span>&gt;&lt;/<span class="pl-ent">script</span>&gt;</pre></div>
+
+<p>Add the <code>httpu.retry</code> dependency to your App Module</p>
+
+<div class="highlight highlight-js"><pre>angular.module(<span class="pl-s"><span class="pl-pds">'</span>MyApp<span class="pl-pds">'</span></span>, [<span class="pl-s"><span class="pl-pds">'</span>httpu.retry<span class="pl-pds">'</span></span>]);</pre></div>
+
+<p>The <code>huRetryInterceptorFactory</code> dependency is now available</p>
+
+<h3>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h3>
+
+<div class="highlight highlight-js"><pre>angular.module(<span class="pl-s"><span class="pl-pds">'</span>MyApp<span class="pl-pds">'</span></span>)
+.run(<span class="pl-k">function</span>(<span class="pl-smi">$http</span>) {
+  <span class="pl-c">//retry 3 times before giving up. (the original request + 3 retries = 4 request)</span>
+  $http.get(<span class="pl-s"><span class="pl-pds">'</span>http://myapi.com/things<span class="pl-pds">'</span></span>, {
+    retries<span class="pl-k">:</span> <span class="pl-c1">3</span>
+  });
+})
+<span class="pl-c">//SIMPLE USAGE: retry everything</span>
+.config(<span class="pl-k">function</span>(<span class="pl-smi">$httpProvider</span>) {
+  <span class="pl-c">// Add a default interceptor instantiation</span>
+  $httpProvider.interceptors.<span class="pl-c1">push</span>([<span class="pl-s"><span class="pl-pds">'</span>huRetryInterceptorFactory<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">huRetryInterceptorFactory</span>) {
+    <span class="pl-k">return</span> huRetryInterceptorFactory();
+  }]);
+})
+<span class="pl-c">//MEDIUM USAGE: Retry with a 503 error.</span>
+.config(<span class="pl-k">function</span>(<span class="pl-smi">$httpProvider</span>) {
+  $httpProvider.interceptors.<span class="pl-c1">push</span>(<span class="pl-s"><span class="pl-pds">'</span>retryOn503Interceptor<span class="pl-pds">'</span></span>);
+})
+.factory(<span class="pl-s"><span class="pl-pds">'</span>retryOn503Interceptor<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">huRetryInterceptorFactory</span>, <span class="pl-smi">$q</span>, <span class="pl-smi">$timeout</span>) {
+  <span class="pl-c">//return an interceptor that specifies the conditions for retry</span>
+  <span class="pl-k">return</span> huRetryInterceptorFactory({
+    <span class="pl-c">//this func will be called when there are remaining request. i.e. `retries` field in the request config </span>
+    <span class="pl-c">//is still greater than 0.</span>
+    <span class="pl-c">//So, it's called when a retry is about to be performed, allowing you to cancel the retry</span>
+    <span class="pl-c">// Useful when you don't want to retry a request based on some rejection parameters</span>
+    <span class="pl-c">// Must return a promise resolving to a boolean, allowing you to perform an async operation before retrying,</span>
+    <span class="pl-c">// or a boolean which means the desire of retrying</span>
+    <span class="pl-en">shouldRetry</span>: <span class="pl-k">function</span>(<span class="pl-smi">rejection</span>) {
+      <span class="pl-c">//rejection is the paramter passed to https://docs.angularjs.org/api/ng/service/$http responseError interceptor</span>
+      <span class="pl-k">if</span> (rejection.<span class="pl-c1">status</span> <span class="pl-k">===</span> <span class="pl-c1">503</span>) {
+        <span class="pl-c">//If my api response is a 503 error, retry the after 2 secs</span>
+        <span class="pl-k">return</span> $timeout(<span class="pl-k">function</span>() {
+            <span class="pl-k">return</span> <span class="pl-c1">true</span>;
+          }, <span class="pl-c1">2000</span>);
+      } 
+      <span class="pl-k">return</span> <span class="pl-c1">false</span>;
+    }
+    <span class="pl-c">//There is also another one config parameter to the factory, called `retryField`</span>
+    <span class="pl-c">//that allows you to specify the name of field to be looked in the config to determine</span>
+    <span class="pl-c">// how many retries are remaining. Defaults to 'retries'</span>
+  });
+});</pre></div>
+
+<h3>
+<a id="use-cases" class="anchor" href="#use-cases" aria-hidden="true"><span class="octicon octicon-link"></span></a>Use cases</h3>
+
+<ul>
+<li>You have several retry strategies based on some backend specific errors</li>
+</ul>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>LICENSE</h2>
+
+<p>The MIT License (<a href="LICENSE">MIT</a>)</p>
+
+<p>Copyright (c) 2015 Telefónica I+D - <a href="http://www.tid.es">http://www.tid.es</a></p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/angular-hu/bower-retry">angular-hu-retry</a> is maintained by <a href="https://github.com/angular-hu">angular-hu</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
+
