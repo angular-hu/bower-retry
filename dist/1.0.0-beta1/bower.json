@@ -1,0 +1,29 @@
+{
+  "name": "angular-hu-retry",
+  "version": "1.0.0-beta1",
+  "authors": [
+    "Javier Mendiara Cañardo <javier.mendiaracanardo@telefonica.com>"
+  ],
+  "description": "Retry failed request with angular",
+  "main": "retry.js",
+  "keywords": [
+    "angular",
+    "utilities",
+    "http",
+    "$http",
+    "retry"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/angular-hu/angular-hu"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/angular-hu/angular-hu",
+  "ignore": [
+    "index.js",
+    "package.json"
+  ],
+  "dependencies": {
+    "angular": ">= 1.2.7"
+  }
+}
